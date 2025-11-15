@@ -1,0 +1,372 @@
+Here is your **complete, step-by-step end-to-end roadmap** for the **Real Estate Pricing & Market Intelligence Scraper Project (99acres / MagicBricks)**.
+This roadmap covers **scraping → MySQL design → cleaning → analysis → Tableau dashboards → documentation**, making it a perfect portfolio project.
+
+---
+
+# 🏗️ **END-TO-END ROADMAP: Real Estate Pricing & Market Intelligence Scraper**
+
+---
+
+# **1️⃣ Project Planning (Day 1)**
+
+### 🎯 **Objectives**
+
+* Scrape real estate listings from **MagicBricks / 99acres**
+* Store and clean the data in **MySQL**
+* Analyze market trends using **Tableau**
+* Build insights for:
+
+  * Price distribution
+  * Best neighborhoods
+  * Amenity impact on price
+  * Builder comparison
+
+### 🎯 **Target Deliverables**
+
+* Python scraper
+* MySQL database (clean + normalized)
+* Tableau dashboards
+* Final project report / GitHub repository
+
+---
+
+# **2️⃣ Website Analysis & Legal Considerations (Day 1)**
+
+### ✔ Identify scrapable pages:
+
+* Search results pages
+* Individual property pages
+
+### ✔ Check:
+
+* Pagination structure
+* HTML structure (price, BHK, area tags)
+* Location metadata
+* Amenities list
+
+### ✔ Note:
+
+* No login-based scraping
+* Use polite scraping: delays, headers
+* Use Selenium if JavaScript-heavy
+
+---
+
+# **3️⃣ Data Fields to Scrape (Day 2)**
+
+You will collect:
+
+### 🏡 **Property Details**
+
+* Title
+* Price (₹)
+* BHK
+* Area (sq. ft.)
+* Price per sq. ft.
+* Property type (Apartment/Villa/etc.)
+* Furnishing
+
+### 🌍 **Location Data**
+
+* Locality
+* City
+* Latitude/Longitude (optional via geocoding)
+
+### 🛠️ **Amenities**
+
+* Parking
+* Power Backup
+* Lift
+* Security
+* Gym
+* Clubhouse
+* Swimming pool
+
+### 🧑‍💼 **Builder/Owner Details**
+
+* Builder name
+* Property age
+
+### 📅 **Timeline Data**
+
+* Listing date
+* Last updated date
+
+---
+
+# **4️⃣ Build the Web Scraper (Days 3–5)**
+
+### ✔ Tools:
+
+* Python
+* BeautifulSoup + Requests → for simple pages
+* Selenium → if JS-rendered
+
+### ✔ Steps:
+
+1. Identify the URL pattern for search pages
+2. Write parser for:
+
+   * Price
+   * BHK
+   * Area
+   * Amenities
+   * Location
+3. Handle pagination
+4. Save scraped data to CSV/JSON temporarily
+5. Validate fields (remove symbols from price, sq. ft., etc.)
+
+### Optional:
+
+* Add **geocoding API** to get exact coordinates → useful for Tableau heatmaps.
+
+---
+
+# **5️⃣ Design the MySQL Database Schema (Day 6)**
+
+## **🔷 ER Diagram Overview**
+
+**Locality** (1) — (∞) **Property**
+**Property** (∞) — (M) **Amenity** via **Property_Amenities**
+**Property** (1) — (∞) **Price_History** (in case you scrape weekly/monthly)
+
+### ✔ **locality**
+
+```
+locality_id (PK)
+locality_name
+city
+latitude
+longitude
+```
+
+### ✔ **property**
+
+```
+property_id (PK)
+locality_id (FK)
+builder_name
+property_type
+bhk
+area_sqft
+furnishing
+age_of_property
+listing_date
+```
+
+### ✔ **amenities**
+
+```
+amenity_id (PK)
+amenity_name
+```
+
+### ✔ **property_amenities**
+
+```
+property_id (FK)
+amenity_id (FK)
+```
+
+### ✔ **price_history**
+
+```
+price_id (PK)
+property_id (FK)
+price
+price_per_sqft
+scraped_at_date
+```
+
+---
+
+# **6️⃣ Load Data into MySQL (Day 7)**
+
+### Steps:
+
+1. Create tables via SQL DDL
+2. Clean CSV → convert types
+3. Insert data into MySQL using:
+
+   * SQLAlchemy
+   * MySQL Connector
+4. Validate foreign key relations
+5. Fix missing prices, invalid BHK values etc.
+
+---
+
+# **7️⃣ Data Cleaning & Transformation (Days 8–9)**
+
+### ✔ Clean text-based fields
+
+* Remove “₹”, “Lac”, “Cr”
+* Convert BHK → numeric
+* Convert area → integer
+
+### ✔ Create derived fields:
+
+```
+price_per_sqft = price / area_sqft
+```
+
+```
+annual_appreciation = (new_price - old_price) / old_price
+```
+
+### ✔ Normalize amenities:
+
+Convert amenities to separate rows using mapping.
+
+### ✔ Aggregate data:
+
+* Neighborhood-wise avg price
+* Builder-wise price comparisons
+* Amenity occurrence counts
+
+---
+
+# **8️⃣ Create Analysis Views in MySQL (Day 10)**
+
+These views make Tableau faster & cleaner.
+
+### 📌 price_by_locality
+
+```
+SELECT locality_name, city,
+       AVG(price) AS avg_price,
+       AVG(price_per_sqft) AS avg_ppsqft
+FROM property
+JOIN locality USING(locality_id)
+JOIN price_history USING(property_id)
+GROUP BY locality_id;
+```
+
+### 📌 amenity_impact_view
+
+```
+SELECT a.amenity_name,
+       AVG(ph.price) AS avg_price
+FROM amenities a
+JOIN property_amenities pa ON a.amenity_id = pa.amenity_id
+JOIN price_history ph ON pa.property_id = ph.property_id
+GROUP BY a.amenity_name;
+```
+
+### 📌 property_summary_view
+
+* price
+* BHK
+* area
+* builder
+* locality
+* amenities (aggregated)
+
+---
+
+# **9️⃣ Connect MySQL to Tableau (Day 11)**
+
+### Steps:
+
+1. Tableau → Connect → MySQL Server
+2. Choose your database
+3. Select views instead of raw tables
+4. Start creating worksheets
+
+---
+
+# **🔟 Build Tableau Dashboards (Days 12–14)**
+
+---
+
+## **📊 Dashboard 1: Price Heatmap**
+
+* Map using latitude/longitude
+* Color: avg price
+* Filters: BHK, property type, city
+
+### Visuals:
+
+* Filled maps
+* Bubble maps showing price
+* Tooltip: Avg price, avg price/sqft
+
+---
+
+## **📊 Dashboard 2: Neighborhood Comparison**
+
+* Bar chart: Top localities by price
+* Box plot: Price variation
+* Bubble chart: Area vs price
+
+### KPIs:
+
+* Avg price per locality
+* Price per sq. ft.
+* Median area
+
+---
+
+## **📊 Dashboard 3: Amenity ROI Impact**
+
+* Bar chart → price for houses with vs without amenity
+* Tree map → top amenities
+* Scatter plot → no. of amenities vs price
+
+---
+
+## **📊 Dashboard 4: Price Distribution Analysis**
+
+* Histogram → price ranges
+* Box plot → price outliers
+* BHK vs Price comparison
+
+---
+
+# **1️⃣1️⃣ Add Storytelling (Day 15)**
+
+### Include visuals like:
+
+* "Where are the most expensive neighborhoods?"
+* "Which amenities increase price the most?"
+* "Which builders command premium pricing?"
+* "What is the price spread in your city?"
+
+---
+
+# **1️⃣2️⃣ Final Deliverables (Days 16–17)**
+
+### ✔ **GitHub Upload**
+
+* Scraper code
+* SQL schema
+* Data samples
+* Tableau workbook (.twbx)
+* Documentation
+
+### ✔ **Project Report (PDF)**
+
+* Motivation
+* Data model
+* Dashboard screenshots
+* Insights
+* Challenges
+
+### ✔ **Optional demo video (3–5 minutes)**
+
+* Introduce the dashboard
+* Explain your findings
+
+---
+
+# ⏳ **Total timeline: 15–17 days**
+
+Perfect for a portfolio or academic project.
+
+---
+
+# ⭐ Want me to generate:
+
+✅ The complete MySQL schema?
+✅ Python scraper template?
+✅ Tableau dashboard layouts?
+Just tell me — I can generate each part.
