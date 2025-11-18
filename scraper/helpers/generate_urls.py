@@ -1,4 +1,4 @@
-def generate_pune_urls(total_pages = 10):
+def generate_pune_urls(total_pages = 100):  
   base = "https://www.magicbricks.com/flats-in-pune-for-sale-pppfs"
   urls = []
 
@@ -12,7 +12,7 @@ def generate_pune_urls(total_pages = 10):
 
 if __name__ == "__main__":
   import json
-  urls = generate_pune_urls(10)
+  urls = generate_pune_urls(100)
 
   with open("../../data/urls/urls_pune.json", "w") as f:
     json.dump(urls, f, indent=2)
